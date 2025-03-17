@@ -10,7 +10,7 @@ contract DeployPip is Script {
     function run() public {
         vm.startBroadcast();
 
-        IGroth16Verifier verifier = IGroth16Verifier(/*enter deployed verifier address here*/);
+        IGroth16Verifier verifier = IGroth16Verifier(address(0xEEEE)); // input actual deployed verifier
         uint256 denomination = 2e15;
         IERC20 token = IERC20(address(0));
 
