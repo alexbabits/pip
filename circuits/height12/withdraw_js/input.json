@@ -1,0 +1,13 @@
+{
+    "recipient": "123",
+    "nullifierHash": "123",
+    "root": "123",
+    "nullifier": "123",
+    "pathElements": [
+        "123",
+        "123",
+        "123",
+        "123"
+    ],
+    "pathIndices": [0,0,0,0]
+}

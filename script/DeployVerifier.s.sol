@@ -8,7 +8,7 @@ import {SoloVerifier} from "../src/SoloVerifier.sol";
 // SEPOLIA: forge script script/DeployVerifier.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 // Only needs to be deployed once for all pip pools.
-contract Deploy is Script {
+contract DeployVerifier is Script {
 
     function run() public {
         vm.startBroadcast();

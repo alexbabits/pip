@@ -3,10 +3,11 @@ pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {PoseidonT3} from "./libraries/PoseidonT3.sol";
-import {IGroth16Verifier} from "./interfaces/IGroth16Verifier.sol";
+import {PoseidonT3} from "../../src/libraries/PoseidonT3.sol";
+import {IGroth16Verifier} from "../../src/interfaces/IGroth16Verifier.sol";
 
-contract Pip is Ownable {
+// Legacy contract using merkle tree of height 4 for exhaustive multi-tree testing. (Tree resets & non-zero tree indices)
+contract Pip4 is Ownable {
 
     using SafeERC20 for IERC20;
 
@@ -17,7 +18,7 @@ contract Pip is Ownable {
     // ZERO_VALUE = keccak256("Pulse In Private") % FIELD_SIZE 
     uint256 public constant ZERO_VALUE = 11122724670666931127833274645309940916396779779585410472511079044548860378081; 
     uint256 public constant FIELD_SIZE = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public constant HEIGHT = 12; 
+    uint256 public constant HEIGHT = 4; 
     uint256 public constant OWNER_FEE = 20; // 0.20%
     uint256 public constant RELAYER_FEE = 5; // 0.05%
     uint256 public constant GAS = 1e14; // will be like 50,000e18 PLS for pulsechain, double check decimals.
