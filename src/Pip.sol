@@ -17,7 +17,7 @@ contract Pip is Ownable {
     // ZERO_VALUE = keccak256("Pulse In Private") % FIELD_SIZE 
     uint256 public constant ZERO_VALUE = 11122724670666931127833274645309940916396779779585410472511079044548860378081; 
     uint256 public constant FIELD_SIZE = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public constant HEIGHT = 4; // CHANGED BACK TO 4 FOR ANONYMITY SET TESTING
+    uint256 public constant HEIGHT = 12;
     uint256 public constant OWNER_FEE = 20; // 0.20%
     uint256 public constant RELAYER_FEE = 5; // 0.05%
     uint256 public constant GAS = 1e14; // will be like 40,000e18 PLS for pulsechain, double check decimals.

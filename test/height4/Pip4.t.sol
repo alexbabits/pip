@@ -79,21 +79,6 @@ contract Pip4Test is Test {
         return nullifierHash;
     }
 
-    // REMOVE AFTER FRONTEND IS DONE
-    function testNullifierHash() public pure {
-        bytes32 nullifierHash = createNullifierHash(5484685018578095695133807340700167692449365185825157726136679054112643810177, 0);
-        console.log("nullifierHash:", uint256(nullifierHash));
-    }
-
-    // REMOVE AFTER FRONTEND IS DONE
-    function testAddressConversion() public pure {
-        // Brave wallet:
-        // Alice = 0x1103Bf6589b6b8BafD1497fdd55546c4Cc489111 = 97136418337785869232199084580692894639299531025
-        // Bob = 0x5A95C42Cf9a647D38b2cB501d17a10b24855FC25 = 517149069721034538598964349098091978429744675877
-        // Charlie = 0xBbbE15b9678Fc2A02a51de87c4E495D6007cc02D = 1071820308179678186260968281686288282015296700461
-        // David = 0x46881398Ae0A9Fbe38f610eE4cF5a6F30a555482 = 402663962392362241080168866160693837101427676290
-        //console.log(uint256(uint160(0x69)));
-    }
 
     //=================================================
     //================== BEGIN TESTS ==================
@@ -136,7 +121,7 @@ contract Pip4Test is Test {
         //                 /\
         //                /  \
         //               /    \
-        //              /  #1  \
+        //              /  #0  \
         //             /________\        /\  
         //                 ||           /__\     
         // O__/\_/\____O___||__/\__O__O__||____O___/\___
@@ -199,7 +184,7 @@ contract Pip4Test is Test {
         //                 /\
         //                /  \
         //               /    \
-        //              /  #2  \
+        //              /  #1  \
         //             /________\        /\  
         //                 ||           /__\     
         // O__/\_/\____O___||__/\__O__O__||____O___/\___
@@ -360,8 +345,8 @@ contract Pip4Test is Test {
 
         // Withdraw
         vm.startPrank(BOB);
-        vm.expectEmit(true, true, false, false); // (to, nullifierHash)
-        emit Pip4.Withdrawal(s.recipient, s.nullifierHash);
+        vm.expectEmit(true, true, true, true); // (to, nullifierHash, tree index, root)
+        emit Pip4.Withdraw(s.recipient, s.nullifierHash, 0, 0x2130ad5394b9ce6a2fa31b9127b857eef88b9ef6c0480004006a4c6f44cb2726);
         pip.withdraw(p, s); 
 
         // Cannot withdraw twice with the same proof.
@@ -440,8 +425,8 @@ contract Pip4Test is Test {
 
         // Withdraw
         vm.startPrank(BOB);
-        vm.expectEmit(true, true, false, false); // (to, nullifierHash)
-        emit Pip4.Withdrawal(s.recipient, s.nullifierHash);
+        vm.expectEmit(true, true, true, true); // (to, nullifierHash, tree index, root)
+        emit Pip4.Withdraw(s.recipient, s.nullifierHash, 0, 0x2130ad5394b9ce6a2fa31b9127b857eef88b9ef6c0480004006a4c6f44cb2726);
         pip.withdraw(p, s); 
         vm.stopPrank();
 
@@ -749,6 +734,35 @@ contract Pip4Test is Test {
         pip.withdrawFees();
         assertEq(OWNER.balance, INITIAL_ETH + 8 * ownerFee, "got fees");
         assertEq(address(pip).balance, ((_numDeposits - 8) * _depositValue), "Cleared of the 8 withdraws");
+        vm.stopPrank();
+    }
+
+
+    function testChangeOwner() public {
+        uint256 _denomination = 1e18;
+        deployPool(false, _denomination, true);
+
+        vm.startPrank(OWNER);
+
+        pip.transferOwnership(RELAYER);
+        vm.expectRevert();
+        pip.withdrawFees();
+        vm.stopPrank();
+
+        vm.startPrank(RELAYER);
+
+        pip.withdrawFees();
+        pip.transferOwnership(BOB);
+        vm.expectRevert();
+        pip.withdrawFees();
+        vm.stopPrank();
+
+        vm.startPrank(BOB);
+        
+        pip.withdrawFees();
+        pip.renounceOwnership();
+        vm.expectRevert();
+        pip.withdrawFees();
         vm.stopPrank();
     }
 }

@@ -11,9 +11,9 @@ contract DeployPip is Script {
         vm.startBroadcast();
 
         // Input actual values when deploying
-        IGroth16Verifier verifier = IGroth16Verifier(address(0x06F4925912b8177E521Aca4924Cd7e631e74E562));
-        IERC20 token = IERC20(address(0x779877A7B0D9E8603169DdbD7836e478b4624789)); 
-        uint256 denomination = 2e16;
+        IGroth16Verifier verifier = IGroth16Verifier(address(0x69));
+        IERC20 token = IERC20(address(0x69)); 
+        uint256 denomination = 69;
 
         Pip pip = new Pip(verifier, denomination, token);
         console.log("Deployed Pip.sol at address: ", address(pip));

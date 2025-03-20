@@ -18,19 +18,20 @@ contract Pip4 is Ownable {
     // ZERO_VALUE = keccak256("Pulse In Private") % FIELD_SIZE 
     uint256 public constant ZERO_VALUE = 11122724670666931127833274645309940916396779779585410472511079044548860378081; 
     uint256 public constant FIELD_SIZE = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public constant HEIGHT = 4; 
+    uint256 public constant HEIGHT = 4;
     uint256 public constant OWNER_FEE = 20; // 0.20%
     uint256 public constant RELAYER_FEE = 5; // 0.05%
-    uint256 public constant GAS = 1e14; // will be like 50,000e18 PLS for pulsechain, double check decimals.
+    uint256 public constant GAS = 1e14; // will be like 40,000e18 PLS for pulsechain, double check decimals.
     
     uint256 public leafIndex;
     uint256 public treeIndex;
     uint256 public ownerFees;
 
-    mapping(bytes32 => bool) public roots;
-    mapping(bytes32 => bool) public commitments;
-    mapping(uint256 => bytes32) public zeros;
-    mapping(uint256 => bytes32) public siblingNodes;
+    mapping(bytes32 => bool) public roots; // root --> Exists?
+    mapping(bytes32 => bool) public commitments; // Deposit Leaf --> Exists?
+    mapping(uint256 => bytes32) public zeros; // Height --> Static "empty" values at each height of the tree
+    mapping(uint256 => bytes32) public siblingNodes; // Height --> "Localized" Path Element value
+    mapping(bytes32 => uint256) public rootTreeIndex; // root --> tree index
     mapping(bytes32 => mapping(ProofType => bool)) public nullifierHashes; // nullifierHash --> ProofType --> used?
     
     enum ProofType {
@@ -51,7 +52,7 @@ contract Pip4 is Ownable {
     }
 
     event Deposit(bytes32 indexed leaf, uint256 indexed _leafIndex, uint256 indexed _treeIndex, bytes32 root);
-    event Withdrawal(address indexed to, bytes32 indexed nullifierHash);  
+    event Withdraw(address indexed to, bytes32 indexed nullifierHash, uint256 indexed _treeIndex, bytes32 root);  
     event GasSent(address indexed recipient, address indexed relayer);
     event MerkleTreeReset(uint256 indexed newTreeIndex);
 
@@ -95,7 +96,8 @@ contract Pip4 is Ownable {
         checkProof(p, s, ProofType.Withdraw);
         nullifierHashes[s.nullifierHash][ProofType.Withdraw] = true;
         _processWithdraw(s.recipient);
-        emit Withdrawal(s.recipient, s.nullifierHash);
+        uint256 _treeIndex = rootTreeIndex[s.root];
+        emit Withdraw(s.recipient, s.nullifierHash, _treeIndex, s.root);
     }
 
 
@@ -211,6 +213,7 @@ contract Pip4 is Ownable {
         }
 
         roots[currentLevelHash] = true;
+        rootTreeIndex[currentLevelHash] = treeIndex;
         leafIndex += 1;
         return currentLevelHash;
     }
