@@ -417,7 +417,6 @@ contract Pip4Test is Test {
         pip.sendGas(p,s);
         vm.stopPrank();
 
-
         assertEq(address(BOB).balance, INITIAL_ETH + GAS * 7500 / 10000, "bob got gas");
         assertEq(address(RELAYER).balance, INITIAL_ETH + GAS * 2500 / 10000, "relayer got ETH fee");
         assertEq(token.balanceOf(RELAYER), relayerFee, "relayer got token fee");
@@ -431,9 +430,7 @@ contract Pip4Test is Test {
         vm.stopPrank();
 
         assertEq(token.balanceOf(address(pip)), ownerFee, "sent tokens, just has fee left");
-
         assertEq(token.balanceOf(BOB), INITIAL_TOKENS + withdrawalAmount, "Recipient");
-
 
         // withdraw fees
         vm.startPrank(OWNER);
@@ -758,7 +755,7 @@ contract Pip4Test is Test {
         vm.stopPrank();
 
         vm.startPrank(BOB);
-        
+
         pip.withdrawFees();
         pip.renounceOwnership();
         vm.expectRevert();

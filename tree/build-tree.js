@@ -51,15 +51,13 @@ function getPathElements(tree, leafIndex, height) {
 
 // Run: node build-tree.js
 (async () => {
-    const treeHeight = 4;
+    const treeHeight = 12;
     const leafIndex = 0;
 
     // If you want to view all zero values of a tree, just pass in empty commitment array,
     // any leafIndex will suffice as an emptry tree has only one set of path elements
     const {tree, poseidon} = await buildTree([
-        BigInt("4873845517341354240483781786684739248524789913426222845413696638288295894761"),
-        BigInt("19893796767628644644508042129737146844370001181247521714447689156352108429278"), 
-        BigInt("3970558148520727263457132309636987021913061380623131292344242352805121773637")
+        BigInt("20407506681149032070931953404570432862121352043728462031922682617556181030249")
     ], treeHeight); 
 
     // First element is type BigInt because it's the zero value or the first commitment
