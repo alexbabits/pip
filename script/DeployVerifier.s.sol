@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SoloVerifier} from "../src/SoloVerifier.sol";
+import {PlonkVerifierPPOT} from "../src/PlonkVerifierPPOT.sol";
 
 // LOCAL: forge script script/DeployVerifier.s.sol --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY --broadcast
 // SEPOLIA: forge script script/DeployVerifier.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
@@ -12,8 +12,8 @@ contract DeployVerifier is Script {
 
     function run() public {
         vm.startBroadcast();
-        SoloVerifier verifier = new SoloVerifier();
-        console.log("Deployed SoloVerifier.sol at addres: ", address(verifier));
+        PlonkVerifierPPOT verifier = new PlonkVerifierPPOT();
+        console.log("Deployed PlonkVerifierPPOT.sol at addres: ", address(verifier));
         vm.stopBroadcast();
     }
 }

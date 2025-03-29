@@ -3,14 +3,14 @@ pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {PoseidonT3} from "./libraries/PoseidonT3.sol";
-import {IGroth16Verifier} from "./interfaces/IGroth16Verifier.sol";
+import {PoseidonT3} from "./PoseidonT3.sol";
+import {IPlonkVerifierPPOT} from "./IPlonkVerifierPPOT.sol";
 
 contract Pip is Ownable {
 
     using SafeERC20 for IERC20;
 
-    IGroth16Verifier public immutable verifier;
+    IPlonkVerifierPPOT public immutable verifier;
     IERC20 public immutable token;
     uint256 public immutable denomination;
     
@@ -19,8 +19,6 @@ contract Pip is Ownable {
     uint256 public constant FIELD_SIZE = 21888242871839275222246405745257275088548364400416034343698204186575808495617;
     uint256 public constant HEIGHT = 12;
     uint256 public constant OWNER_FEE = 20; // 0.20%
-    uint256 public constant RELAYER_FEE = 5; // 0.05%
-    uint256 public constant GAS = 1e14; // will be like 40,000e18 PLS for pulsechain, double check decimals.
     
     uint256 public leafIndex;
     uint256 public treeIndex;
@@ -28,31 +26,21 @@ contract Pip is Ownable {
 
     mapping(bytes32 => bool) public roots; // root --> Exists?
     mapping(bytes32 => bool) public commitments; // Deposit Leaf --> Exists?
+    mapping(bytes32 => bool) public nullifierHashes; // nullifierHash --> used?
     mapping(uint256 => bytes32) public zeros; // Height --> Static "empty" values at each height of the tree
     mapping(uint256 => bytes32) public siblingNodes; // Height --> "Localized" Path Element value
     mapping(bytes32 => uint256) public rootTreeIndex; // root --> tree index
-    mapping(bytes32 => mapping(ProofType => bool)) public nullifierHashes; // nullifierHash --> ProofType --> used?
     
-    enum ProofType {
-        Gas,
-        Withdraw
-    }
-
-    struct ECPoints {
-        uint256[2] pA;
-        uint256[2][2] pB;
-        uint256[2] pC;
-    }
-
     struct PubSignals {
         address payable recipient;
+        uint256 gas;
+        uint256 fee;
         bytes32 nullifierHash;
         bytes32 root;
     }
 
     event Deposit(bytes32 indexed leaf, uint256 indexed _leafIndex, uint256 indexed _treeIndex, bytes32 root);
     event Withdraw(address indexed to, bytes32 indexed nullifierHash, uint256 indexed _treeIndex, bytes32 root);  
-    event GasSent(address indexed recipient, address indexed relayer);
     event MerkleTreeReset(uint256 indexed newTreeIndex);
 
     error ZeroValue();
@@ -62,10 +50,10 @@ contract Pip is Ownable {
     error IncorrectProof();
     error IncorrectPayment();
     error PreimageExceedsFieldSize();
-    error CallFailed();
+    error CallFailed(address user, uint256 value);
 
 
-    constructor(IGroth16Verifier _verifier, uint256 _denomination, IERC20 _token) Ownable(msg.sender) {
+    constructor(IPlonkVerifierPPOT _verifier, uint256 _denomination, IERC20 _token) Ownable(msg.sender) {
         if (_denomination == 0) revert ZeroValue();
         if (address(_verifier) == address(0)) revert ZeroValue();
         verifier = _verifier;
@@ -91,61 +79,36 @@ contract Pip is Ownable {
     }
 
 
-    function withdraw(ECPoints calldata p, PubSignals calldata s) external {
-        checkProof(p, s, ProofType.Withdraw);
-        nullifierHashes[s.nullifierHash][ProofType.Withdraw] = true;
-        _processWithdraw(s.recipient);
+    function withdraw(uint256[24] calldata p, PubSignals calldata s) external payable {
+        if (msg.value != s.gas) revert IncorrectPayment();
+        checkProof(p, s);
+        nullifierHashes[s.nullifierHash] = true;
+        _processWithdraw(s.recipient, s.gas, s.fee);
         uint256 _treeIndex = rootTreeIndex[s.root];
         emit Withdraw(s.recipient, s.nullifierHash, _treeIndex, s.root);
     }
 
 
-    function sendGas(ECPoints calldata p, PubSignals calldata s) external {
-        checkProof(p, s, ProofType.Gas);
-        nullifierHashes[s.nullifierHash][ProofType.Gas] = true;
-
-        (bool recipientSuccess, ) = s.recipient.call{value: GAS * 7500 / 10000}("");
-        if (!recipientSuccess) revert CallFailed();
-
-        uint256 relayerFee = denomination * RELAYER_FEE / 10000;
-
-        // ETH 
-        if (address(token) == address(0)) {
-            (bool success, ) = msg.sender.call{ value: relayerFee + (GAS * 2500 / 10000) }("");
-            if (!success) revert CallFailed();
-        // ERC20
-        } else {
-            (bool success, ) = msg.sender.call{ value: GAS * 2500 / 10000}("");
-            if (!success) revert CallFailed();
-            token.safeTransfer(msg.sender, relayerFee);
-        }
-
-        emit GasSent(s.recipient, msg.sender);
-    }
-
-
     function withdrawFees() external onlyOwner {
-        uint256 _fees = ownerFees;
+        uint256 fees = ownerFees;
         ownerFees = 0;
         // ETH
         if (address(token) == address(0)) {
-            (bool success, ) = msg.sender.call{ value: _fees }("");
-            if (!success) revert CallFailed();
+            (bool success, ) = msg.sender.call{ value: fees }("");
+            if (!success) revert CallFailed(msg.sender, fees);
         // ERC20
         } else {
-            token.safeTransfer(msg.sender, _fees);
+            token.safeTransfer(msg.sender, fees);
         }
     }
 
 
-    function checkProof(ECPoints calldata p, PubSignals calldata s, ProofType proofType) public view {
-        if (nullifierHashes[s.nullifierHash][proofType]) revert NullifierHashAlreadyUsed();
+    function checkProof(uint256[24] calldata p, PubSignals calldata s) public view {
+        if (nullifierHashes[s.nullifierHash]) revert NullifierHashAlreadyUsed();
         if (!roots[s.root]) revert InvalidRoot();
         if (!verifier.verifyProof(
-            p.pA, 
-            p.pB, 
-            p.pC, 
-            [uint256(uint160(address(s.recipient))), uint256(s.nullifierHash), uint256(s.root)]
+            p,
+            [uint256(uint160(address(s.recipient))), s.gas, s.fee, uint256(s.nullifierHash), uint256(s.root)]
         )) revert IncorrectProof();
     }
 
@@ -160,27 +123,41 @@ contract Pip is Ownable {
     function _processDeposit() private {
         // ETH
         if (address(token) == address(0)) {
-            if (msg.value != denomination + GAS) revert IncorrectPayment();
+            if (msg.value != denomination) revert IncorrectPayment();
         // ERC20
         } else {
-            if (msg.value != GAS) revert IncorrectPayment();
+            if (msg.value != 0) revert IncorrectPayment();
             token.safeTransferFrom(msg.sender, address(this), denomination);
         }
     }
 
 
-    function _processWithdraw(address payable _recipient) private {
-        uint256 totalFee = denomination * (OWNER_FEE + RELAYER_FEE) / 10000;
+    function _processWithdraw(address payable recipient, uint256 gas, uint256 _relayerFee) private {
         uint256 ownerFee = denomination * OWNER_FEE / 10000;
+        uint256 relayerFee = denomination * _relayerFee / 10000;
+        uint256 totalFee = ownerFee + relayerFee;
         uint256 withdrawAmount = denomination - totalFee;
 
         // ETH
         if (address(token) == address(0)) {
-            (bool recipientSuccess, ) = _recipient.call{ value: withdrawAmount }("");
-            if (!recipientSuccess) revert CallFailed();
+            (bool recipientSuccess, ) = recipient.call{ value: withdrawAmount + gas }("");
+            if (!recipientSuccess) revert CallFailed(recipient, withdrawAmount + gas);
+
+            if (relayerFee != 0) {
+                (bool relayerSuccess, ) = msg.sender.call{ value: relayerFee }("");
+                if (!relayerSuccess) revert CallFailed(msg.sender, relayerFee);
+            }
         // ERC20
         } else {
-            token.safeTransfer(_recipient, withdrawAmount);
+            token.safeTransfer(recipient, withdrawAmount);
+            if (gas != 0) {
+                (bool success, ) = recipient.call{ value: gas }("");
+                if (!success) revert CallFailed(recipient, gas);
+            }
+
+            if (relayerFee != 0) {
+                token.safeTransfer(msg.sender, relayerFee);
+            }
         }
         ownerFees += ownerFee;
     }
