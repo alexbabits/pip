@@ -114,7 +114,13 @@
         ]
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
     "stateMutability": "view"
   },
   {
@@ -553,21 +559,6 @@
   },
   {
     "type": "error",
-    "name": "IncorrectProof",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InvalidRoot",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NullifierHashAlreadyUsed",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "OwnableInvalidOwner",
     "inputs": [
       {
@@ -591,6 +582,11 @@
   {
     "type": "error",
     "name": "PreimageExceedsFieldSize",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ProofInvalidOrUsed",
     "inputs": []
   },
   {

@@ -45,10 +45,8 @@ contract Pip is Ownable {
 
     error ZeroValue();
     error CommitmentAlreadyInTree();
-    error NullifierHashAlreadyUsed();
-    error InvalidRoot();
-    error IncorrectProof();
     error IncorrectPayment();
+    error ProofInvalidOrUsed();
     error PreimageExceedsFieldSize();
     error CallFailed(address user, uint256 value);
 
@@ -81,7 +79,7 @@ contract Pip is Ownable {
 
     function withdraw(uint256[24] calldata p, PubSignals calldata s) external payable {
         if (msg.value != s.gas) revert IncorrectPayment();
-        checkProof(p, s);
+        if (!checkProof(p, s)) revert ProofInvalidOrUsed();
         nullifierHashes[s.nullifierHash] = true;
         _processWithdraw(s.recipient, s.gas, s.fee);
         uint256 _treeIndex = rootTreeIndex[s.root];
@@ -103,13 +101,14 @@ contract Pip is Ownable {
     }
 
 
-    function checkProof(uint256[24] calldata p, PubSignals calldata s) public view {
-        if (nullifierHashes[s.nullifierHash]) revert NullifierHashAlreadyUsed();
-        if (!roots[s.root]) revert InvalidRoot();
+    function checkProof(uint256[24] calldata p, PubSignals calldata s) public view returns (bool) {
+        if (nullifierHashes[s.nullifierHash]) return false;
+        if (!roots[s.root]) return false;
         if (!verifier.verifyProof(
             p,
             [uint256(uint160(address(s.recipient))), s.gas, s.fee, uint256(s.nullifierHash), uint256(s.root)]
-        )) revert IncorrectProof();
+        )) return false;
+        return true;
     }
 
 

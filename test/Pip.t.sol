@@ -374,7 +374,7 @@ contract PipTest is Test {
         pip.withdraw{ value: gas}(p, s); 
 
         // Cannot withdraw twice with the same proof. (nullifierHash is used)
-        vm.expectRevert(abi.encodeWithSelector(Pip.NullifierHashAlreadyUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Pip.ProofInvalidOrUsed.selector));
         pip.withdraw{ value: gas}(p, s); 
 
         vm.stopPrank();
@@ -475,7 +475,7 @@ contract PipTest is Test {
         pip.withdraw(p, s); 
 
         // Cannot withdraw twice with the same proof. (nullifierHash is used)
-        vm.expectRevert(abi.encodeWithSelector(Pip.NullifierHashAlreadyUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Pip.ProofInvalidOrUsed.selector));
         pip.withdraw(p, s); 
 
         vm.stopPrank();
@@ -575,7 +575,7 @@ contract PipTest is Test {
         pip.withdraw{ value: gas}(p, s); 
 
         // Cannot withdraw twice with the same proof. (nullifierHash is used)
-        vm.expectRevert(abi.encodeWithSelector(Pip.NullifierHashAlreadyUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Pip.ProofInvalidOrUsed.selector));
         pip.withdraw{ value: gas}(p, s); 
 
         vm.stopPrank();
@@ -680,7 +680,7 @@ contract PipTest is Test {
         pip.withdraw(p, s); 
 
         // Cannot withdraw twice with the same proof. (nullifierHash is used)
-        vm.expectRevert(abi.encodeWithSelector(Pip.NullifierHashAlreadyUsed.selector));
+        vm.expectRevert(abi.encodeWithSelector(Pip.ProofInvalidOrUsed.selector));
         pip.withdraw{ value: gas}(p, s); 
 
         vm.stopPrank();
