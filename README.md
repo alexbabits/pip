@@ -1,4 +1,5 @@
 # pip solidity & circuit
+* pulseinprivate.com
 
 ### Docs
 * https://pip-1.gitbook.io/pip-docs
