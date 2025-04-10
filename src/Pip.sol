@@ -197,9 +197,6 @@ contract Pip is Ownable {
     function _resetMerkleTree() private {
         leafIndex = 0;
         treeIndex += 1;
-        for (uint256 i = 0; i < HEIGHT; i++) {
-            delete siblingNodes[i];
-        }
         emit MerkleTreeReset(treeIndex);
     }
 
