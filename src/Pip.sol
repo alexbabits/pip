@@ -41,7 +41,7 @@ contract Pip is Ownable {
 
     event Deposit(bytes32 indexed leaf, uint256 indexed _leafIndex, uint256 indexed _treeIndex, bytes32 root);
     event Withdraw(address indexed to, bytes32 indexed nullifierHash, uint256 indexed _treeIndex, bytes32 root);  
-    event MerkleTreeReset(uint256 indexed newTreeIndex);
+    event NextMerkleTreeCreated(uint256 indexed newTreeIndex);
 
     error ZeroValue();
     error CommitmentAlreadyInTree();
@@ -166,8 +166,10 @@ contract Pip is Ownable {
         uint256 _leafIndex = leafIndex;
 
         if (_leafIndex == uint256(2)**HEIGHT) {
-            _resetMerkleTree();
             _leafIndex = 0;
+            leafIndex = 0;
+            treeIndex += 1;
+            emit NextMerkleTreeCreated(treeIndex);
         }
 
         bytes32 currentLevelHash = leaf;
@@ -191,13 +193,6 @@ contract Pip is Ownable {
         rootTreeIndex[currentLevelHash] = treeIndex;
         leafIndex += 1;
         return currentLevelHash;
-    }
-
-
-    function _resetMerkleTree() private {
-        leafIndex = 0;
-        treeIndex += 1;
-        emit MerkleTreeReset(treeIndex);
     }
 
 }

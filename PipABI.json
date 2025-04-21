@@ -470,7 +470,7 @@
   },
   {
     "type": "event",
-    "name": "MerkleTreeReset",
+    "name": "NextMerkleTreeCreated",
     "inputs": [
       {
         "name": "newTreeIndex",
